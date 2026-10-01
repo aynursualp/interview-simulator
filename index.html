@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autonomous Interview - Camera Test</title>
+</head>
+<body>
+    <h1>Interview Simulator - Camera Feed</h1>
+    <video id="video-element" autoplay playsinline></video>
+
+    <canvas id="canvas-element" style="display: none;"></canvas>
+
+    <script>
+        const video = document.getElementById("video-element");
+        const canvas = document.getElementById("canvas-element");
+
+        const ws = new WebSocket("ws://127.0.0.1:8000/ws");
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                video.srcObject = stream;
+
+                let timer = setInterval(() => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const base64Data = canvas.toDataURL('image/jpeg', 0.5);
+                    ws.send(base64Data);
+                }, 100) // Send frame every second
+                
+            })
+            .catch(function(err) {
+                console.log("Camera error: ", err);
+        });
+    </script>
+</body>
+</html>
