@@ -19,11 +19,13 @@ async def websocket_endpoint(websocket: WebSocket):
             np_arr = np.frombuffer(byte_data, dtype=np.uint8)
             img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
-            results = cv_analyzer.analyze_frame(img)
-            if results.face_landmarks:
-                print("Face landmarks detected")
+            if img is not None:
+                analysis_results = cv_analyzer.analyze_frame(img)
+                print(analysis_results)
             else:
-                print("Face searching")
-                
+                print("Error: Could not decode image.")
+
+            #results = cv_analyzer.analyze_frame(img)
+           
         except WebSocketDisconnect:
             print("Connection lost")
