@@ -7,7 +7,7 @@
 </head>
 <body>
     <h1>Interview Simulator - Camera Feed</h1>
-    <video id="video-element" autoplay playsinline></video>
+    <video id="video-element" autoplay playsinline muted></video>
 
     <canvas id="canvas-element" style="display: none;"></canvas>
 
@@ -17,7 +17,7 @@
 
         const ws = new WebSocket("ws://127.0.0.1:8000/ws");
 
-        navigator.mediaDevices.getUserMedia({ video: true })
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             .then(function(stream) {
                 video.srcObject = stream;
 
@@ -27,11 +27,22 @@
                     canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
                     const base64Data = canvas.toDataURL('image/jpeg', 0.5);
                     ws.send(base64Data);
-                }, 100) // Send frame every second
-                
+                }, 100); // Send frame every second
+
+                const audioTrack = stream.getAudioTracks()[0];
+                const audioStream = new MediaStream([audioTrack]);
+                const audioRecorder = new MediaRecorder(audioStream);
+
+                audioRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+                        ws.send(event.data); // sent to server as binary (blob)
+                    }
+                };
+                audioRecorder.start(500);
             })
             .catch(function(err) {
-                console.log("Camera error: ", err);
+                console.log("Camera/Mic error: ", err);
+                alert("Allow camera and microfon")
         });
     </script>
 </body>

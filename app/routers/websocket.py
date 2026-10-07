@@ -10,22 +10,25 @@ cv_analyzer = CVAnalyzer()
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    while True:
-        try:
-            data = await websocket.receive_text()
-            pure_data = data.split(",")[1]
 
-            byte_data = base64.b64decode(pure_data)
-            np_arr = np.frombuffer(byte_data, dtype=np.uint8)
-            img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+    try:
+        while True:
+            data = await websocket.receive()
+            if "text" in data:
+                pure_data = data["text"].split(",")[1]
 
-            if img is not None:
-                analysis_results = cv_analyzer.analyze_frame(img)
-                print(analysis_results)
-            else:
-                print("Error: Could not decode image.")
+                byte_data = base64.b64decode(pure_data)
+                np_arr = np.frombuffer(byte_data, dtype=np.uint8)
+                img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
-            #results = cv_analyzer.analyze_frame(img)
-           
-        except WebSocketDisconnect:
-            print("Connection lost")
+                if img is not None:
+                    analysis_results = cv_analyzer.analyze_frame(img)
+                    print(analysis_results)
+                else:
+                    print("Error: Could not decode image.")
+            elif "bytes" in data:
+                audio_chunk = data["bytes"]
+                print(f"🎤 Yeni ses paketi alındı! Boyut: {len(audio_chunk)} byte")
+            
+    except WebSocketDisconnect:
+        print("Connection lost")
